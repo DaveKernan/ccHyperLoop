@@ -23,6 +23,7 @@ Claude Loop is a Claude Code plugin providing two skills — `/loopplan` and `/l
 | Playwright verification | User-defined acceptance tests + auto-generated smoke tests | Plan-defined tests for what matters, auto-generated smoke tests catch gaps. |
 | Definition of Done | Orchestrator drafts, user reviews and edits before execution begins | User owns the DoD, not the orchestrator. |
 | Git hygiene | Clean branch enforced as hard gate before execution | Non-negotiable starting point for clean merges. |
+| Versioning | Semver with async GitHub update check on session start | User stays current without interrupting active work. |
 
 ---
 
@@ -32,6 +33,8 @@ Claude Loop is a Claude Code plugin providing two skills — `/loopplan` and `/l
 claude-loop/
 ├── .claude-plugin/
 │   └── plugin.json
+├── VERSION                          # Semver file (e.g., "1.0.0")
+├── CHANGELOG.md                     # Release history
 ├── skills/
 │   ├── loopplan/
 │   │   └── SKILL.md                # Planning skill
@@ -43,10 +46,12 @@ claude-loop/
 │   ├── loopplan.md                 # /loopplan slash command
 │   ├── loopbuild.md                # /loopbuild slash command
 │   ├── loopstatus.md               # /loopstatus slash command
-│   └── loopcancel.md               # /loopcancel slash command
+│   ├── loopcancel.md               # /loopcancel slash command
+│   └── loopupdate.md               # /loopupdate slash command
 ├── hooks/
 │   ├── hooks.json
-│   └── orchestrator-stop-hook.sh
+│   ├── orchestrator-stop-hook.sh
+│   └── check-update.sh             # Non-blocking GitHub version check
 ├── scripts/
 │   ├── setup-orchestrator.sh       # Initialize state dir, validate git, start loop
 │   └── merge-worktrees.sh          # Merge unit branches into working branch
@@ -457,6 +462,13 @@ Cancel active orchestration:
 - Clean up worktrees
 - Report cancellation with iteration count
 
+### `/loopupdate`
+
+Update plugin to latest version from GitHub:
+- Refuses if orchestrator loop is active
+- Shows changelog diff between current and available version
+- Requires user confirmation before updating
+
 ---
 
 ## Plugin Dependencies
@@ -467,6 +479,85 @@ Cancel active orchestration:
 - Git worktrees (git built-in)
 - Playwright (installed at verification time if needed)
 - `/simplify` and code-review skills are invoked if available. If not installed, the subagent skips those DoD items and the orchestrator logs a warning. The unit is still considered done — simplify and review are quality gates, not correctness gates. The REVIEWING phase (whole-codebase review) also gracefully skips if unavailable.
+
+---
+
+## Versioning & Auto-Update
+
+### Version Scheme
+
+Semver (`MAJOR.MINOR.PATCH`) tracked in two places:
+- `VERSION` file at plugin root (single line, e.g., `1.0.0`)
+- `version` field in `plugin.json`
+
+Both must match. `CHANGELOG.md` documents each release.
+
+### GitHub Repository
+
+The plugin is hosted on GitHub. Releases are tagged as `v1.0.0`, `v1.1.0`, etc. The repo URL is stored in `plugin.json`:
+
+```json
+{
+  "name": "claude-loop",
+  "version": "1.0.0",
+  "repository": "https://github.com/<owner>/claude-loop"
+}
+```
+
+### Auto-Update Check
+
+The `check-update.sh` script runs as a **SessionStart hook** (non-blocking, async):
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/check-update.sh",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Stop": [...]
+  }
+}
+```
+
+**How `check-update.sh` works:**
+
+1. Read local version from `${CLAUDE_PLUGIN_ROOT}/VERSION`
+2. Fetch latest release tag from GitHub API: `gh api repos/<owner>/claude-loop/releases/latest --jq '.tag_name'`
+   - If `gh` is not available, fall back to `curl` with GitHub API
+   - If no network or API fails: silently exit (never block)
+3. Compare versions — if remote > local, output advisory message via hook output:
+   ```
+   ⬆️  Claude Loop v1.2.0 available (you have v1.0.0).
+       Run: /loopupdate to update.
+   ```
+4. If versions match: no output (silent)
+
+**Critical rules:**
+- The check is `async: true` — it never blocks session start or any running operation
+- Network failures are silently swallowed — no error output
+- The check only advises — it never auto-updates without user action
+- If an orchestrator loop is active (`.claude/loop-orchestrator/config.json` exists), the update message still shows but `/loopupdate` will refuse to run mid-loop
+
+### `/loopupdate` Command
+
+A new command in `commands/loopupdate.md` that performs the actual update:
+
+1. Check if an orchestrator loop is active → if yes: **refuse** with "Cannot update while a loop is running. Run /loopcancel first or wait for completion."
+2. Show current version and available version
+3. Show CHANGELOG diff (what changed between versions)
+4. Ask user to confirm: "Update claude-loop from v1.0.0 to v1.2.0? (y/N)"
+5. If confirmed:
+   - Pull latest from GitHub (or re-install via plugin manager)
+   - Verify new VERSION file matches expected
+   - Report success: "Updated to v1.2.0. Restart your session to use the new version."
 
 ---
 
