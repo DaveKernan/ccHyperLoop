@@ -83,9 +83,12 @@ for UNIT_DIR in "${STATE_DIR}/units"/*/; do
     CONFLICTED_FILES=$(git diff --name-only --diff-filter=U 2>/dev/null || echo "")
 
     if [[ -z "$CONFLICTED_FILES" ]]; then
-      git commit --no-edit 2>/dev/null || true
-      log "  Auto-resolved ${UNIT_NAME}"
-      MERGE_SUCCESSES=$((MERGE_SUCCESSES + 1))
+      log "  WARNING: Merge failed but no conflicts detected — possible hook failure"
+      git merge --abort 2>/dev/null || true
+      log "  FAILED to merge ${UNIT_NAME} — non-conflict merge failure"
+      MERGE_FAILURES=$((MERGE_FAILURES + 1))
+      jq '.status = "merge_conflict" | .last_error = "Merge failed without conflicts — possible hook failure"' \
+        "$UNIT_STATUS_FILE" > "${UNIT_STATUS_FILE}.tmp" && mv "${UNIT_STATUS_FILE}.tmp" "$UNIT_STATUS_FILE"
     else
       # Abort this merge — will need manual resolution
       git merge --abort 2>/dev/null || true
