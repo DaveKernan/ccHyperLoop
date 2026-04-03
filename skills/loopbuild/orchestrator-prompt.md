@@ -16,8 +16,22 @@ Do not proceed until you have read ALL state files. Decisions without current st
 
 ### Phase: EXECUTING
 
-1. **Count units by status:** tally pending, in_progress, done, blocked units
-2. **Dispatch pending units** if there is capacity (in_progress < max_concurrent):
+1. **Scaffold check (first iteration only):** On the very first iteration (iteration 1, all units still pending), build shared scaffold before dispatching any subagents. Worktrees are cloned from the working branch — if shared types, stubs, configs, or project skeleton don't exist on the branch yet, every subagent would independently try to create them, causing merge conflicts.
+
+   Read `.claude/loop-orchestrator/interfaces.md` and `.claude/loop-orchestrator/decisions.md`. From these, create the minimum shared foundation that all units need:
+   - **Shared types/interfaces** — type definition files, API contract types, shared enums referenced in the interfaces section
+   - **Project config** — `tsconfig.json`, `package.json` with dependencies, `.env.example`, database config, or whatever the tech stack requires to build
+   - **Stub files for cross-unit dependencies** — if Unit 1 consumes an API that Unit 2 implements, create a stub/mock that matches the interface contract so Unit 1 can build against it
+   - **Test infrastructure** — test config, shared test utilities, fixtures referenced by multiple units
+
+   Do NOT implement any unit's actual tasks — only create the shared skeleton that all units build on top of. Commit the scaffold to the working branch:
+   ```bash
+   git add -A && git commit -m "scaffold: shared types, config, and stubs for parallel units"
+   ```
+   This commit becomes the base state that all worktrees clone from. Skip this step on subsequent iterations (when any unit is no longer pending).
+
+2. **Count units by status:** tally pending, in_progress, done, blocked units
+3. **Dispatch pending units** if there is capacity (in_progress < max_concurrent):
    - For each unit to dispatch, read its `context.md` for scope, tasks, and Definition of Done
    - Read the subagent prompt template from `${CLAUDE_PLUGIN_ROOT}/skills/loopbuild/subagent-prompt.md`
    - Read `.claude/loop-orchestrator/interfaces.md` and `.claude/loop-orchestrator/decisions.md`
@@ -39,11 +53,11 @@ Do not proceed until you have read ALL state files. Decisions without current st
    - Pass the rendered prompt as the `prompt` parameter to the Agent tool with `isolation: "worktree"`, `mode: "bypassPermissions"`, and optionally `model: "<chosen-model>"` (omit the model parameter entirely when token optimization is disabled, to use the session default)
    - The Agent tool returns the worktree path and branch in its result when `isolation: "worktree"` is used. Record these in the unit's status.json. If the worktree path is not returned, discover it via `git worktree list` and match by the unit's branch name.
    - Update the unit's status.json: set `status` to `"in_progress"`, record `worktree_path` and `branch`
-3. **Process returned subagents:**
+4. **Process returned subagents:**
    - **Success** — set unit status to `"done"`, update `simplify_done` and `review_done` flags, increment `units_completed` in status.json
    - **Failure with retries remaining** — increment `retries`, record `last_error`, set status back to `"pending"` for re-dispatch next iteration
    - **Failure with retries exhausted** — set status to `"blocked"`, increment `units_blocked` in status.json, report to user with the error details
-4. **Check transition:** if all units are `done` or `blocked`, and at least one is `done`, transition to MERGING. Update `status.json` phase to `"merging"`.
+5. **Check transition:** if all units are `done` or `blocked`, and at least one is `done`, transition to MERGING. Update `status.json` phase to `"merging"`.
 
 ### Phase: MERGING
 

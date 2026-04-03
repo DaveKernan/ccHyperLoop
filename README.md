@@ -207,6 +207,8 @@ Each work unit runs in its own git worktree via Claude Code's `Agent` tool with 
 - Each unit commits to its own branch (`loop/unit-01-name`, etc.)
 - After completion, branches are merged back into the working branch
 
+**Scaffold-first dispatch:** Before any subagents are dispatched, the orchestrator commits a shared scaffold to the working branch — shared types, project config, stubs for cross-unit dependencies, and test infrastructure. Worktrees clone from this branch state, so every subagent starts with a buildable project and focuses purely on its unit's scope. Without this, parallel subagents would independently create the same shared files, causing merge conflicts.
+
 Subagents follow strict rules:
 - Only modify files listed in their scope
 - Respect shared interface contracts exactly

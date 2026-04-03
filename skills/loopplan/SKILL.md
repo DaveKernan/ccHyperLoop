@@ -39,6 +39,17 @@ Before identifying work units, design the contracts that connect them:
 
 Interfaces are the backbone of parallel work. If interfaces are wrong, every unit is wrong.
 
+### Step 3a: Identify Shared Scaffold
+
+Determine what must exist on the working branch *before* any subagent is dispatched. The orchestrator commits this scaffold so every worktree starts with a buildable project. Include in the plan's Shared Interfaces section:
+
+- **Shared type definition files** — types/interfaces referenced by multiple units
+- **Project config** — `tsconfig.json`, `package.json` with shared dependencies, database config
+- **Stub files** — if Unit A consumes an API that Unit B implements, define the stub that Unit A builds against
+- **Test infrastructure** — shared test config, fixtures, utilities used by multiple units
+
+These are NOT part of any unit's tasks — the orchestrator creates them from the interfaces section before dispatch. Each unit's tasks should assume the scaffold already exists.
+
 ### Step 4: Identify Independent Work Units (2-8)
 
 Decompose the feature into 2-8 work units. Each unit:
