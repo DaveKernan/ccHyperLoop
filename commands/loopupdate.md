@@ -1,11 +1,11 @@
 ---
-description: "Update Claude Loop plugin to latest version from GitHub"
+description: "Update ccHyperLoop plugin to latest version from GitHub"
 allowed-tools: ["Read", "Bash"]
 ---
 
 # Loop Update Command
 
-Update the Claude Loop plugin to the latest version from GitHub.
+Update the ccHyperLoop plugin to the latest version from GitHub.
 
 ## Instructions
 

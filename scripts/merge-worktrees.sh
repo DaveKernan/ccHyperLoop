@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Claude Loop — Merge Worktrees
+# ccHyperLoop — Merge Worktrees
 # Merges completed unit branches back into the working branch.
 # Called by the orchestrator during the MERGING phase.
 

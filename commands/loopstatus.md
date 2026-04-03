@@ -1,15 +1,15 @@
 ---
-description: "Check progress of active Claude Loop orchestration"
+description: "Check progress of active ccHyperLoop orchestration"
 allowed-tools: ["Read", "Bash", "Glob"]
 ---
 
 # Loop Status Command
 
-Check and report the current state of an active Claude Loop orchestration.
+Check and report the current state of an active ccHyperLoop orchestration.
 
 ## Instructions
 
-1. **Check for active orchestration**: Verify `.claude/loop-orchestrator/config.json` exists. If not, report: "No active Claude Loop orchestration."
+1. **Check for active orchestration**: Verify `.claude/loop-orchestrator/config.json` exists. If not, report: "No active ccHyperLoop orchestration."
 
 2. **Read orchestration status**: Read `.claude/loop-orchestrator/status.json` and report:
    - Current phase

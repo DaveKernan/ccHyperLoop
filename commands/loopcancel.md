@@ -1,11 +1,11 @@
 ---
-description: "Cancel active Claude Loop orchestration"
+description: "Cancel active ccHyperLoop orchestration"
 allowed-tools: ["Read", "Bash", "Glob"]
 ---
 
 # Loop Cancel Command
 
-Cancel an active Claude Loop orchestration and clean up resources.
+Cancel an active ccHyperLoop orchestration and clean up resources.
 
 ## Instructions
 

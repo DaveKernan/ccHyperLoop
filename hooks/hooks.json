@@ -1,5 +1,5 @@
 {
-  "description": "Claude Loop plugin hooks — orchestrator Stop hook and async version check",
+  "description": "ccHyperLoop plugin hooks — orchestrator Stop hook and async version check",
   "hooks": {
     "SessionStart": [
       {

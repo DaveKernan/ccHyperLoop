@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Async SessionStart hook: check GitHub for newer versions of claude-loop.
+# Async SessionStart hook: check GitHub for newer versions of ccHyperLoop.
 # Silently exits 0 on ANY failure — never blocks session start.
 
 trap 'exit 0' ERR
@@ -61,7 +61,7 @@ HIGHER="$(printf '%s\n%s\n' "$LOCAL_VERSION" "$REMOTE_VERSION" | sort -V | tail 
 
 # --- Remote is newer — emit hook output ---
 cat <<EOF
-{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"Claude Loop v${REMOTE_VERSION} available (you have v${LOCAL_VERSION}). Run /loopupdate to update."}}
+{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"ccHyperLoop v${REMOTE_VERSION} available (you have v${LOCAL_VERSION}). Run /loopupdate to update."}}
 EOF
 
 exit 0

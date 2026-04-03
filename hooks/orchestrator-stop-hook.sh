@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Claude Loop Orchestrator Stop Hook
+# ccHyperLoop Orchestrator Stop Hook
 # Prevents session exit when an orchestrator loop is active.
 # Reads loop state, checks completion, and feeds the orchestrator prompt back.
 
@@ -31,7 +31,7 @@ fi
 log_error() {
   local msg="$1"
   echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $msg" >> "$LOG_FILE" 2>/dev/null || true
-  echo "WARNING: Claude Loop orchestrator: $msg" >&2
+  echo "WARNING: ccHyperLoop orchestrator: $msg" >&2
 }
 
 # Parse loop state frontmatter
@@ -63,7 +63,7 @@ fi
 
 # Check max iterations
 if [[ $MAX_ITERATIONS -gt 0 ]] && [[ $ITERATION -ge $MAX_ITERATIONS ]]; then
-  echo "Claude Loop: Max iterations ($MAX_ITERATIONS) reached. Stopping orchestrator."
+  echo "ccHyperLoop: Max iterations ($MAX_ITERATIONS) reached. Stopping orchestrator."
   rm -f "$LOOP_STATE_FILE"
   exit 0
 fi
@@ -80,7 +80,7 @@ if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]]; then
   ' 2>/dev/null || echo "")
 
   if echo "$LAST_OUTPUT" | grep -q '<promise>LOOP COMPLETE</promise>'; then
-    echo "Claude Loop: Orchestration complete."
+    echo "ccHyperLoop: Orchestration complete."
     rm -f "$LOOP_STATE_FILE"
     exit 0
   fi
@@ -116,7 +116,7 @@ if [[ -f "$STATUS_FILE" ]]; then
   fi
 fi
 
-SYSTEM_MSG="Claude Loop iteration ${NEXT_ITERATION}${UNITS_SUMMARY} | To complete: output <promise>LOOP COMPLETE</promise>"
+SYSTEM_MSG="ccHyperLoop iteration ${NEXT_ITERATION}${UNITS_SUMMARY} | To complete: output <promise>LOOP COMPLETE</promise>"
 
 jq -n \
   --arg prompt "$PROMPT_TEXT" \

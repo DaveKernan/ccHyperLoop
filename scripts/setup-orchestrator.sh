@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Claude Loop — Setup Orchestrator
+# ccHyperLoop — Setup Orchestrator
 # Validates git hygiene, parses the plan, creates state directory,
 # and writes the loop state file to start the orchestrator Ralph loop.
 
@@ -17,7 +17,7 @@ while [[ $# -gt 0 ]]; do
   case $1 in
     -h|--help)
       cat << 'HELP'
-Claude Loop Orchestrator Setup
+ccHyperLoop Orchestrator Setup
 
 USAGE:
   /loopbuild <PLAN_PATH> [OPTIONS]
@@ -200,7 +200,7 @@ done < <(grep '^### Unit [0-9]' "$PLAN_PATH")
 # ─── Output Setup Report ───
 
 cat <<REPORTEOF
-Claude Loop orchestrator initialized.
+ccHyperLoop orchestrator initialized.
 
 Plan:           ${PLAN_PATH}
 Work units:     ${UNIT_COUNT}
