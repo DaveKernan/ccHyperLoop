@@ -39,6 +39,12 @@ Parallel orchestrated development for Claude Code. Plan work into independent un
                                  +--------------+
                                         |
                                         v
+                                 +--------------+
+                                 | DOCUMENTING  | Clean artifacts,
+                                 |              | verify README
+                                 +--------------+
+                                        |
+                                        v
                                       DONE
 ```
 
@@ -224,8 +230,9 @@ The `/loopplan` skill enforces this during planning with an independence verific
 |-------|-------------|----------------|
 | **EXECUTING** | Dispatch subagents to worktrees, monitor progress, retry failures (up to 3x per unit) | MERGING (when all units done) |
 | **MERGING** | Merge unit branches into working branch, auto-resolve conflicts where possible, run full test suite | REVIEWING |
-| **REVIEWING** | `/simplify` on entire merged codebase, then code review on full diff vs base branch | VERIFYING (if UI) or DONE |
-| **VERIFYING** | Playwright acceptance tests from plan + auto-generated smoke tests for uncovered routes | DONE |
+| **REVIEWING** | `/simplify` on entire merged codebase, then code review on full diff vs base branch | VERIFYING (if UI) or DOCUMENTING |
+| **VERIFYING** | Playwright acceptance tests from plan + auto-generated smoke tests for uncovered routes | DOCUMENTING |
+| **DOCUMENTING** | Remove artifacts, verify README is comprehensive and current, fix orphaned references, commit cleanup | DONE |
 | **DONE** | Summary report — units completed, iterations used, elapsed time. Branch is ready for PR. | Exit |
 
 ### Failure Handling

@@ -57,7 +57,7 @@ Do not proceed until you have read ALL state files. Decisions without current st
    - Fix the issues found
    - Re-run the review that found them (max 2 rounds total)
    - If issues persist after 2 rounds, log them and proceed
-4. Transition: if `has_ui` is `true` in config.json, update phase to `"verifying"`. Otherwise, update phase to `"done"`.
+4. Transition: if `has_ui` is `true` in config.json, update phase to `"verifying"`. Otherwise, update phase to `"documenting"`.
 
 ### Phase: VERIFYING
 
@@ -85,9 +85,38 @@ This phase only runs when `has_ui` is `true`.
    npx playwright test
    ```
 7. **Handle results:**
-   - All pass — transition to DONE. Update `status.json` phase to `"done"`.
+   - All pass — transition to DOCUMENTING. Update `status.json` phase to `"documenting"`.
    - Failures — analyze each failure (is it a test issue or a code issue?), fix, re-run. Max 3 rounds of fix-and-rerun.
-   - Still failing after 3 rounds — escalate to user with failure details, screenshots, and error logs. Do not transition to DONE.
+   - Still failing after 3 rounds — escalate to user with failure details, screenshots, and error logs. Do not transition to DOCUMENTING.
+
+### Phase: DOCUMENTING
+
+Final cleanup pass before declaring done. This ensures the shipped codebase is clean, well-documented, and free of artifacts.
+
+1. **Audit project structure** — scan the entire file tree for:
+   - Development artifacts that shouldn't ship (build plans, design specs, scratch files, `.tmp` files, empty placeholder files)
+   - Redundant or duplicate files
+   - Files with stale references to old names or paths
+   - Delete anything that doesn't belong. If uncertain, ask the user.
+
+2. **Ensure README is comprehensive and current** — read the project's README (or create one if missing). It must reflect what was actually built, not what was planned. Verify it includes:
+   - What the project does (one-paragraph summary)
+   - Installation or setup instructions
+   - Usage examples
+   - Configuration reference (if applicable)
+   - Project structure overview
+   - Troubleshooting for common issues
+   - If any section is missing, outdated, or references things that don't exist, fix it.
+
+3. **Verify no orphaned references** — grep the codebase for:
+   - References to deleted files or removed features
+   - Broken import paths or dead links
+   - TODO/FIXME/HACK comments that should have been resolved
+   - Fix any found.
+
+4. **Commit cleanup** — commit all documentation and cleanup changes with a descriptive message.
+
+5. Transition to DONE. Update `status.json` phase to `"done"`.
 
 ### Phase: DONE
 
