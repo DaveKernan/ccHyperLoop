@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Parallel orchestrated development with worktree-isolated subagents, shared state, and Playwright verification. Use /loopplan to plan and /loopbuild to execute.",
   "author": {
-    "name": "davidkernan"
+    "name": "DaveKernan"
   },
   "repository": "https://github.com/DaveKernan/ccHyperLoop",
   "license": "MIT",
