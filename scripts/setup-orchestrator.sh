@@ -147,7 +147,7 @@ jq -n \
   --argjson max_iterations "$MAX_ITERATIONS" \
   --argjson max_retries "$MAX_RETRIES" \
   --argjson has_ui "$HAS_UI" \
-  '{plan_path: $plan_path, base_branch: $base_branch, working_branch: $working_branch, clean_start_verified: true, max_concurrent: $max_concurrent, max_iterations: $max_iterations, max_retries: $max_retries, user_approved_dod: false, user_approved_concurrency: false, test_command: "", start_command: "", _note_commands: "test_command and start_command are populated by the loopbuild SKILL during interactive setup (Step 3), not by this script", has_ui: $has_ui}' \
+  '{plan_path: $plan_path, base_branch: $base_branch, working_branch: $working_branch, clean_start_verified: true, max_concurrent: $max_concurrent, max_iterations: $max_iterations, max_retries: $max_retries, user_approved_dod: false, user_approved_concurrency: false, encouragement_enabled: false, test_command: "", start_command: "", has_ui: $has_ui}' \
   > "${STATE_DIR}/config.json"
 
 # Write initial status.json

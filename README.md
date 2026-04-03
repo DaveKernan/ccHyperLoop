@@ -115,9 +115,18 @@ Options:
 Before execution starts, you review and approve:
 - **Concurrency** — how many agents run in parallel
 - **Definition of Done** — per-unit checklist (edit any items you want)
+- **Encouragement Mode** — optional (see below)
 - **Test and start commands** — auto-detected, you confirm
 
 Then the orchestrator loop begins.
+
+#### Encouragement Mode
+
+When offered, you can enable Encouragement Mode. This appends a firm reminder to every work instruction sent to subagents:
+
+> *"Do not be lazy, think hard, do not use placeholders without human permission, test properly and prove it works before saying done."*
+
+This combats the tendency for agents to take shortcuts, use placeholder code, or declare "done" prematurely. It only applies to substantive work instructions, not transactional status messages. Off by default.
 
 ### 3. Monitor
 
@@ -263,6 +272,7 @@ The `/loopplan` skill enforces this during planning with an independence verific
   "max_retries": 3,
   "user_approved_dod": true,
   "user_approved_concurrency": true,
+  "encouragement_enabled": false,
   "test_command": "npm test",
   "start_command": "npm run dev",
   "has_ui": true

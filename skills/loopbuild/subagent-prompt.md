@@ -63,3 +63,10 @@ Address the previous error specifically. Do not repeat the same approach that fa
 4. **Report if truly blocked.** If you cannot complete your work due to a missing interface, ambiguous requirement, or external dependency, report what you need clearly. Do not guess or improvise around blockers.
 5. **Run tests frequently.** After completing each task (or logical group of tasks), run the project's test command to catch regressions early. Do not wait until the end to discover failures.
 6. **Commit before finishing.** All your changes must be committed to the worktree branch before you return control to the orchestrator. Uncommitted changes will be lost.
+
+{{#if encouragement_enabled}}
+
+---
+
+Do not be lazy, think hard, do not use placeholders without human permission, test properly and prove it works before saying done.
+{{/if}}

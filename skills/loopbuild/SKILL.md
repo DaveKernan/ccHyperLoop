@@ -63,6 +63,29 @@ Present ALL unit DoDs to the user for review. The user may edit, add, or remove 
 
 Once the user approves, set `user_approved_dod` to `true` in `config.json`.
 
+### Step 2a: Offer Encouragement Mode
+
+Present the following to the user:
+
+```
+Encouragement Mode (optional)
+
+When enabled, every work instruction sent to subagents ends with a
+reminder to work thoroughly:
+
+  "Do not be lazy, think hard, do not use placeholders without human
+   permission, test properly and prove it works before saying done."
+
+This combats the tendency for agents to cut corners, use placeholder
+code, or declare "done" without evidence. It applies to all subagent
+dispatches and orchestrator-to-agent instructions — not transactional
+status messages.
+
+Enable Encouragement Mode? (y/N):
+```
+
+If the user says yes, set `encouragement_enabled` to `true` in `config.json`. If no (or default), set it to `false`.
+
 ### Step 3: Auto-Detect Test and Start Commands
 
 Detect the project's test and start commands by checking (in order):
