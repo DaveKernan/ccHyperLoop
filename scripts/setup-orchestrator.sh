@@ -6,8 +6,6 @@
 
 set -euo pipefail
 
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$0")")}"
-
 # ─── Argument Parsing ───
 
 PLAN_PATH=""
@@ -141,49 +139,36 @@ STATE_DIR="${PROJECT_ROOT}/.claude/loop-orchestrator"
 mkdir -p "${STATE_DIR}/units"
 
 # Write config.json
-cat > "${STATE_DIR}/config.json" <<CONFIGEOF
-{
-  "plan_path": "${PLAN_PATH}",
-  "base_branch": "${BASE_BRANCH}",
-  "working_branch": "${WORKING_BRANCH}",
-  "clean_start_verified": true,
-  "max_concurrent": ${MAX_CONCURRENT},
-  "max_iterations": ${MAX_ITERATIONS},
-  "max_retries": ${MAX_RETRIES},
-  "user_approved_dod": false,
-  "user_approved_concurrency": false,
-  "test_command": "",
-  "start_command": "",
-  "_note_commands": "test_command and start_command are populated by the loopbuild SKILL during interactive setup (Step 3), not by this script",
-  "has_ui": ${HAS_UI}
-}
-CONFIGEOF
+jq -n \
+  --arg plan_path "$PLAN_PATH" \
+  --arg base_branch "$BASE_BRANCH" \
+  --arg working_branch "$WORKING_BRANCH" \
+  --argjson max_concurrent "$MAX_CONCURRENT" \
+  --argjson max_iterations "$MAX_ITERATIONS" \
+  --argjson max_retries "$MAX_RETRIES" \
+  --argjson has_ui "$HAS_UI" \
+  '{plan_path: $plan_path, base_branch: $base_branch, working_branch: $working_branch, clean_start_verified: true, max_concurrent: $max_concurrent, max_iterations: $max_iterations, max_retries: $max_retries, user_approved_dod: false, user_approved_concurrency: false, test_command: "", start_command: "", _note_commands: "test_command and start_command are populated by the loopbuild SKILL during interactive setup (Step 3), not by this script", has_ui: $has_ui}' \
+  > "${STATE_DIR}/config.json"
 
 # Write initial status.json
-cat > "${STATE_DIR}/status.json" <<STATUSEOF
-{
-  "phase": "setup",
-  "iteration": 0,
-  "max_iterations": ${MAX_ITERATIONS},
-  "plan_path": "${PLAN_PATH}",
-  "units_total": ${UNIT_COUNT},
-  "units_completed": 0,
-  "units_in_progress": 0,
-  "units_blocked": 0,
-  "units_pending": ${UNIT_COUNT},
-  "has_ui": ${HAS_UI},
-  "started_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-}
-STATUSEOF
+STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+jq -n \
+  --argjson max_iterations "$MAX_ITERATIONS" \
+  --arg plan_path "$PLAN_PATH" \
+  --argjson units_total "$UNIT_COUNT" \
+  --argjson has_ui "$HAS_UI" \
+  --arg started_at "$STARTED_AT" \
+  '{phase: "setup", iteration: 0, max_iterations: $max_iterations, plan_path: $plan_path, units_total: $units_total, units_completed: 0, units_in_progress: 0, units_blocked: 0, units_pending: $units_total, has_ui: $has_ui, started_at: $started_at}' \
+  > "${STATE_DIR}/status.json"
 
 # Extract Shared Interfaces section from plan
-awk '/^## Shared Interfaces$/,/^## [^S]/' "$PLAN_PATH" | sed '$d' > "${STATE_DIR}/interfaces.md" 2>/dev/null || echo "# Shared Interfaces\n\nNone defined." > "${STATE_DIR}/interfaces.md"
+awk '/^## Shared Interfaces/,/^## [^S]/' "$PLAN_PATH" | sed '$d' > "${STATE_DIR}/interfaces.md" 2>/dev/null || printf '# Shared Interfaces\n\nNone defined.\n' > "${STATE_DIR}/interfaces.md"
 
 # Extract Architectural Decisions section from plan
-awk '/^## Architectural Decisions$/,/^## [^A]/' "$PLAN_PATH" | sed '$d' > "${STATE_DIR}/decisions.md" 2>/dev/null || echo "# Architectural Decisions\n\nNone defined." > "${STATE_DIR}/decisions.md"
+awk '/^## Architectural Decisions/,/^## [^A]/' "$PLAN_PATH" | sed '$d' > "${STATE_DIR}/decisions.md" 2>/dev/null || printf '# Architectural Decisions\n\nNone defined.\n' > "${STATE_DIR}/decisions.md"
 
 # Extract Acceptance Tests section from plan
-awk '/^## Acceptance Tests/,/^## [^A]/' "$PLAN_PATH" | sed '$d' > "${STATE_DIR}/acceptance-tests.md" 2>/dev/null || echo "# Acceptance Tests\n\nNone defined." > "${STATE_DIR}/acceptance-tests.md"
+awk '/^## Acceptance Tests/,/^## [^A]/' "$PLAN_PATH" | sed '$d' > "${STATE_DIR}/acceptance-tests.md" 2>/dev/null || printf '# Acceptance Tests\n\nNone defined.\n' > "${STATE_DIR}/acceptance-tests.md"
 
 # Create per-unit directories
 UNIT_NUM=0
@@ -196,28 +181,19 @@ while IFS= read -r line; do
   mkdir -p "$UNIT_DIR"
 
   # Write unit status.json
-  cat > "${UNIT_DIR}/status.json" <<UNITEOF
-{
-  "id": "${UNIT_ID}",
-  "name": "${UNIT_NAME}",
-  "status": "pending",
-  "worktree_path": "",
-  "branch": "loop/${UNIT_ID}-${UNIT_NAME}",
-  "retries": 0,
-  "max_retries": ${MAX_RETRIES},
-  "last_error": null,
-  "simplify_done": false,
-  "review_done": false,
-  "tasks_total": 0,
-  "tasks_completed": 0
-}
-UNITEOF
+  jq -n \
+    --arg id "$UNIT_ID" \
+    --arg name "$UNIT_NAME" \
+    --arg branch "loop/${UNIT_ID}-${UNIT_NAME}" \
+    --argjson max_retries "$MAX_RETRIES" \
+    '{id: $id, name: $name, status: "pending", worktree_path: "", branch: $branch, retries: 0, max_retries: $max_retries, last_error: null, simplify_done: false, review_done: false, tasks_total: 0, tasks_completed: 0}' \
+    > "${UNIT_DIR}/status.json"
 
   # Extract unit section from plan into context.md
   # Get content from this unit heading until the next unit heading or end of units section
   UNIT_HEADING="### Unit ${UNIT_NUM}:"
   NEXT_HEADING="### Unit $((UNIT_NUM + 1)):"
-  awk "/${UNIT_HEADING}/,/${NEXT_HEADING}|^## /" "$PLAN_PATH" | sed '$d' > "${UNIT_DIR}/context.md" 2>/dev/null || echo "# ${UNIT_NAME}\n\nNo context extracted." > "${UNIT_DIR}/context.md"
+  awk "/${UNIT_HEADING}/,/${NEXT_HEADING}|^## /" "$PLAN_PATH" | sed '$d' > "${UNIT_DIR}/context.md" 2>/dev/null || printf '# %s\n\nNo context extracted.\n' "$UNIT_NAME" > "${UNIT_DIR}/context.md"
 
 done < <(grep '^### Unit [0-9]' "$PLAN_PATH")
 
