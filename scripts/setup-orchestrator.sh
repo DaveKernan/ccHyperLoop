@@ -126,7 +126,7 @@ if [[ "$UNIT_COUNT" -eq 0 ]]; then
 fi
 
 # Extract feature name from plan title (first H1)
-FEATURE_NAME=$(head -5 "$PLAN_PATH" | grep '^# ' | head -1 | sed 's/^# //' | sed 's/ — Loop Plan//' | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
+FEATURE_NAME=$(head -5 "$PLAN_PATH" | grep '^# ' | head -1 | sed -E 's/^# //; s/ — Loop Plan//' | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
 if [[ -z "$FEATURE_NAME" ]]; then
   FEATURE_NAME="orchestrated-build"
 fi
@@ -199,10 +199,15 @@ while IFS= read -r line; do
     > "${UNIT_DIR}/status.json"
 
   # Extract unit section from plan into context.md
-  # Get content from this unit heading until the next unit heading or end of units section
-  UNIT_HEADING="### Unit ${UNIT_NUM}:"
-  NEXT_HEADING="### Unit $((UNIT_NUM + 1)):"
-  awk "/${UNIT_HEADING}/,/${NEXT_HEADING}|^## /" "$PLAN_PATH" | sed '$d' > "${UNIT_DIR}/context.md" 2>/dev/null || printf '# %s\n\nNo context extracted.\n' "$UNIT_NAME" > "${UNIT_DIR}/context.md"
+  awk -v n="$UNIT_NUM" '
+    $0 ~ "^### Unit " n ":" { found=1; print; next }
+    found && /^### Unit [0-9]/ { exit }
+    found && /^## / { exit }
+    found { print }
+  ' "$PLAN_PATH" > "${UNIT_DIR}/context.md" 2>/dev/null
+  if [[ ! -s "${UNIT_DIR}/context.md" ]]; then
+    printf '# %s\n\nNo context extracted.\n' "$UNIT_NAME" > "${UNIT_DIR}/context.md"
+  fi
 
 done < <(grep '^### Unit [0-9]' "$PLAN_PATH")
 

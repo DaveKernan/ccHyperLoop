@@ -35,9 +35,8 @@ log_error() {
 }
 
 # Parse loop state frontmatter
-FRONTMATTER=$(sed -n '/^---$/,/^---$/{ /^---$/d; p; }' "$LOOP_STATE_FILE")
-ITERATION=$(echo "$FRONTMATTER" | grep '^iteration:' | sed 's/iteration: *//')
-MAX_ITERATIONS=$(echo "$FRONTMATTER" | grep '^max_iterations:' | sed 's/max_iterations: *//')
+ITERATION=$(awk '/^---$/{f=!f;next} f && /^iteration:/{sub(/iteration: */,"");print}' "$LOOP_STATE_FILE")
+MAX_ITERATIONS=$(awk '/^---$/{f=!f;next} f && /^max_iterations:/{sub(/max_iterations: */,"");print}' "$LOOP_STATE_FILE")
 
 # Validate numeric fields
 if [[ ! "$ITERATION" =~ ^[0-9]+$ ]]; then
@@ -107,17 +106,13 @@ awk -v next="$NEXT_ITERATION" '
 ' "$LOOP_STATE_FILE" > "$TEMP_FILE"
 mv "$TEMP_FILE" "$LOOP_STATE_FILE"
 
-# Build status summary for system message
+# Build status summary for system message (single jq call)
 UNITS_SUMMARY=""
 if [[ -f "$STATUS_FILE" ]]; then
-  UNITS_COMPLETED=$(jq -r '.units_completed // 0' "$STATUS_FILE" 2>/dev/null || echo "0")
-  UNITS_TOTAL=$(jq -r '.units_total // 0' "$STATUS_FILE" 2>/dev/null || echo "0")
-  UNITS_BLOCKED=$(jq -r '.units_blocked // 0' "$STATUS_FILE" 2>/dev/null || echo "0")
-  PHASE=$(jq -r '.phase // "executing"' "$STATUS_FILE" 2>/dev/null || echo "executing")
-  UNITS_SUMMARY=" | Phase: ${PHASE} | ${UNITS_COMPLETED}/${UNITS_TOTAL} units done"
-  if [[ "$UNITS_BLOCKED" -gt 0 ]]; then
-    UNITS_SUMMARY="${UNITS_SUMMARY}, ${UNITS_BLOCKED} blocked"
-  fi
+  UNITS_SUMMARY=$(jq -r '
+    " | Phase: \(.phase // "executing") | \(.units_completed // 0)/\(.units_total // 0) units done"
+    + (if (.units_blocked // 0) > 0 then ", \(.units_blocked) blocked" else "" end)
+  ' "$STATUS_FILE" 2>/dev/null || echo "")
 fi
 
 SYSTEM_MSG="ccHyperLoop iteration ${NEXT_ITERATION}${UNITS_SUMMARY} | To complete: output <promise>LOOP COMPLETE</promise>"
