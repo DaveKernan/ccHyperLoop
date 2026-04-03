@@ -86,6 +86,32 @@ Enable Encouragement Mode? (y/N):
 
 If the user says yes, set `encouragement_enabled` to `true` in `config.json`. If no (or default), set it to `false`.
 
+### Step 2b: Offer Token Optimization
+
+Present the following to the user:
+
+```
+Token Optimization (optional)
+
+When enabled, the orchestrator selects the model and speed for each
+subagent based on the complexity of its work unit:
+
+  opus    — Complex units: multi-file architecture, integration logic,
+            design decisions, broad codebase understanding needed
+  sonnet  — Standard units: typical feature implementation, moderate
+            complexity, clear scope (this is the default for all units)
+  haiku   — Simple units: boilerplate, config files, straightforward
+            CRUD, single-file mechanical tasks
+
+The orchestrator assesses each unit before dispatch and picks the
+cheapest model that can handle the work. Without this option, all
+units use the default model.
+
+Enable Token Optimization? (y/N):
+```
+
+If the user says yes, set `token_optimization_enabled` to `true` in `config.json`. If no (or default), set it to `false`.
+
 ### Step 3: Auto-Detect Test and Start Commands
 
 Detect the project's test and start commands by checking (in order):

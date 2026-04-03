@@ -116,6 +116,7 @@ Before execution starts, you review and approve:
 - **Concurrency** — how many agents run in parallel
 - **Definition of Done** — per-unit checklist (edit any items you want)
 - **Encouragement Mode** — optional (see below)
+- **Token Optimization** — optional (see below)
 - **Test and start commands** — auto-detected, you confirm
 
 Then the orchestrator loop begins.
@@ -127,6 +128,18 @@ When offered, you can enable Encouragement Mode. This appends a firm reminder to
 > *"Do not be lazy, think hard, do not use placeholders without human permission, test properly and prove it works before saying done."*
 
 This combats the tendency for agents to take shortcuts, use placeholder code, or declare "done" prematurely. It only applies to substantive work instructions, not transactional status messages. Off by default.
+
+#### Token Optimization
+
+When enabled, the orchestrator selects the cheapest model that can handle each work unit:
+
+| Model | Used For | Example Units |
+|-------|----------|---------------|
+| **opus** | Complex multi-file architecture, integration logic, design decisions | Auth system spanning API + middleware + DB |
+| **sonnet** | Standard implementation with clear scope (default for all units when disabled) | REST endpoints, React components |
+| **haiku** | Simple mechanical tasks, boilerplate, config | Adding a config file, simple CRUD, copy-adapt tasks |
+
+The orchestrator assesses each unit's `context.md` before dispatch and picks the model. When in doubt, it chooses the more capable model — a wrong pick costs more in retries than in model savings. The chosen model is logged in the status output. Off by default.
 
 ### 3. Monitor
 
@@ -273,6 +286,7 @@ The `/loopplan` skill enforces this during planning with an independence verific
   "user_approved_dod": true,
   "user_approved_concurrency": true,
   "encouragement_enabled": false,
+  "token_optimization_enabled": false,
   "test_command": "npm test",
   "start_command": "npm run dev",
   "has_ui": true
