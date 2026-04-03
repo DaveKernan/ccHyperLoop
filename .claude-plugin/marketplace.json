@@ -1,8 +1,5 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "ccHyperLoop",
-  "description": "Parallel orchestrated development with worktree-isolated subagents",
-  "version": "1.0.0",
   "owner": {
     "name": "DaveKernan",
     "url": "https://github.com/DaveKernan"
