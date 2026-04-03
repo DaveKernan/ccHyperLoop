@@ -121,6 +121,7 @@ Create the `docs/loop-plans/` directory if it does not exist.
 4. **Flag UI explicitly** — Set `Has UI: true` if the feature includes any user-facing pages or components. This triggers Playwright verification in `/loopbuild`.
 5. **2-8 units** — Fewer than 2 means the work isn't parallelizable. More than 8 means units are too granular and coordination overhead dominates.
 6. **Dependencies must be explicit** — If true independence between units is not achievable, mark the dependency explicitly with a `Depends on:` field. The orchestrator will sequence dependent units rather than parallelize them.
+7. **Security in Architectural Decisions** — Always include security rules in the Architectural Decisions section of the plan. At minimum: no raw HTML rendering of user content (use text content or sanitization), parameterized database queries, input validation at system boundaries, no secrets in client-side code. Subagents follow these decisions, so omitting security rules means they won't enforce them.
 
 ## Plan Output Format
 

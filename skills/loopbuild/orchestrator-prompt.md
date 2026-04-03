@@ -72,13 +72,18 @@ Do not proceed until you have read ALL state files. Decisions without current st
 
 ### Phase: REVIEWING
 
-1. **Run /simplify** on the full merged codebase. This is a quality gate, not a correctness gate. If the /simplify skill is unavailable, log a warning and skip: "WARNING: /simplify not available, skipping codebase simplification."
-2. **Run code-review** on the full diff (`git diff <base_branch>...HEAD`). This is also a quality gate. If the code-review skill is unavailable, log a warning and skip: "WARNING: code-review not available, skipping full-diff review."
-3. If either review surfaces issues:
+1. **Security scan** — grep the merged codebase for common vulnerability patterns and fix any found:
+   - Raw HTML rendering of user content (React's dangerous HTML prop, vanilla JS inner HTML assignment, Vue's v-html directive, Angular's innerHTML binding)
+   - Unparameterized SQL (string concatenation in database queries instead of prepared statements)
+   - Hardcoded secrets (literal passwords, API keys, or tokens in source files)
+   - If a pattern is found in code that handles user input, fix it. If it appears only in test fixtures or static content with no user input path, it is acceptable.
+2. **Run /simplify** on the full merged codebase. This is a quality gate, not a correctness gate. If the /simplify skill is unavailable, log a warning and skip: "WARNING: /simplify not available, skipping codebase simplification."
+3. **Run code-review** on the full diff (`git diff <base_branch>...HEAD`). This is also a quality gate. If the code-review skill is unavailable, log a warning and skip: "WARNING: code-review not available, skipping full-diff review."
+4. If any review or scan surfaces issues:
    - Fix the issues found
-   - Re-run the review that found them (max 2 rounds total)
+   - Re-run the check that found them (max 2 rounds total)
    - If issues persist after 2 rounds, log them and proceed
-4. Transition: if `has_ui` is `true` in config.json, update phase to `"verifying"`. Otherwise, update phase to `"documenting"`.
+5. Transition: if `has_ui` is `true` in config.json, update phase to `"verifying"`. Otherwise, update phase to `"documenting"`.
 
 ### Phase: VERIFYING
 

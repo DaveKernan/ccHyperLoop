@@ -63,6 +63,7 @@ Address the previous error specifically. Do not repeat the same approach that fa
 4. **Report if truly blocked.** If you cannot complete your work due to a missing interface, ambiguous requirement, or external dependency, report what you need clearly. Do not guess or improvise around blockers.
 5. **Run tests frequently.** After completing each task (or logical group of tasks), run the project's test command to catch regressions early. Do not wait until the end to discover failures.
 6. **Commit before finishing.** All your changes must be committed to the worktree branch before you return control to the orchestrator. Uncommitted changes will be lost.
+7. **Write secure code.** Follow OWASP top 10 principles. Never render user-supplied content as raw HTML — use text content or sanitize with DOMPurify. Never execute dynamic strings as code. Always use parameterized database queries. Validate user input at system boundaries. Never expose secrets in client-side code or commit them to git.
 
 {{#if encouragement_enabled}}
 
