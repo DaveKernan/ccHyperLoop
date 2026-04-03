@@ -161,21 +161,30 @@ jq -n \
   '{phase: "setup", iteration: 0, max_iterations: $max_iterations, plan_path: $plan_path, units_total: $units_total, units_completed: 0, units_in_progress: 0, units_blocked: 0, units_pending: $units_total, has_ui: $has_ui, started_at: $started_at}' \
   > "${STATE_DIR}/status.json"
 
-# Extract Shared Interfaces section from plan
-awk '/^## Shared Interfaces/,/^## [^S]/' "$PLAN_PATH" | sed '$d' > "${STATE_DIR}/interfaces.md" 2>/dev/null || printf '# Shared Interfaces\n\nNone defined.\n' > "${STATE_DIR}/interfaces.md"
+# Extract plan sections — use explicit heading names to avoid overlap between
+# sections that share first letters (e.g., "Architectural Decisions" and "Acceptance Tests")
+extract_section() {
+  local heading="$1" output="$2" fallback_title="$3"
+  awk -v h="$heading" '
+    $0 ~ "^## " h { found=1; print; next }
+    found && /^## / { exit }
+    found { print }
+  ' "$PLAN_PATH" > "$output" 2>/dev/null
+  if [[ ! -s "$output" ]]; then
+    printf '# %s\n\nNone defined.\n' "$fallback_title" > "$output"
+  fi
+}
 
-# Extract Architectural Decisions section from plan
-awk '/^## Architectural Decisions/,/^## [^A]/' "$PLAN_PATH" | sed '$d' > "${STATE_DIR}/decisions.md" 2>/dev/null || printf '# Architectural Decisions\n\nNone defined.\n' > "${STATE_DIR}/decisions.md"
-
-# Extract Acceptance Tests section from plan
-awk '/^## Acceptance Tests/,/^## [^A]/' "$PLAN_PATH" | sed '$d' > "${STATE_DIR}/acceptance-tests.md" 2>/dev/null || printf '# Acceptance Tests\n\nNone defined.\n' > "${STATE_DIR}/acceptance-tests.md"
+extract_section "Shared Interfaces" "${STATE_DIR}/interfaces.md" "Shared Interfaces"
+extract_section "Architectural Decisions" "${STATE_DIR}/decisions.md" "Architectural Decisions"
+extract_section "Acceptance Tests" "${STATE_DIR}/acceptance-tests.md" "Acceptance Tests"
 
 # Create per-unit directories
 UNIT_NUM=0
 while IFS= read -r line; do
   UNIT_NUM=$((UNIT_NUM + 1))
   # Extract unit name from "### Unit N: Name (estimated: X tasks)"
-  UNIT_NAME=$(echo "$line" | sed 's/^### Unit [0-9]*: //' | sed 's/ (estimated:.*//' | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
+  UNIT_NAME=$(echo "$line" | sed -E 's/^### Unit [0-9]+: //; s/ \(estimated:.*//' | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
   UNIT_ID=$(printf "unit-%02d" "$UNIT_NUM")
   UNIT_DIR="${STATE_DIR}/units/${UNIT_ID}-${UNIT_NAME}"
   mkdir -p "$UNIT_DIR"

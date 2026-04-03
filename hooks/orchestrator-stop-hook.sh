@@ -98,9 +98,13 @@ if [[ -z "$PROMPT_TEXT" ]]; then
   exit 0
 fi
 
-# Update iteration in state file
+# Update iteration in frontmatter only (avoid matching "iteration:" in prompt content)
 TEMP_FILE="${LOOP_STATE_FILE}.tmp.$$"
-sed "s/^iteration: .*/iteration: $NEXT_ITERATION/" "$LOOP_STATE_FILE" > "$TEMP_FILE"
+awk -v next="$NEXT_ITERATION" '
+  /^---$/ { fm++; print; next }
+  fm == 1 && /^iteration:/ { print "iteration: " next; next }
+  { print }
+' "$LOOP_STATE_FILE" > "$TEMP_FILE"
 mv "$TEMP_FILE" "$LOOP_STATE_FILE"
 
 # Build status summary for system message

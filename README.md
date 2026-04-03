@@ -96,7 +96,7 @@ Describe what you want to build. The skill walks you through:
 4. **Writing acceptance tests** — natural-language Playwright scenarios (if your project has a UI)
 5. **Self-reviewing independence** — verifies no two units touch the same files
 
-Saves the plan to `docs/loop-plans/YYYY-MM-DD-<feature>.md`.
+Saves the plan to `docs/loop-plans/YYYY-MM-DD-<feature>.md` (directory created automatically if it doesn't exist).
 
 ### 2. Build
 

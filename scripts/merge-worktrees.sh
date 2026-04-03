@@ -24,6 +24,16 @@ log() {
   echo "$1"
 }
 
+update_unit_status() {
+  local status_file="$1" jq_expr="$2" unit_name="$3"
+  if jq "$jq_expr" "$status_file" > "${status_file}.tmp"; then
+    mv "${status_file}.tmp" "$status_file"
+  else
+    log "ERROR: Failed to update status JSON for ${unit_name}"
+    rm -f "${status_file}.tmp"
+  fi
+}
+
 # Ensure we're on the working branch
 CURRENT=$(git branch --show-current)
 if [[ "$CURRENT" != "$WORKING_BRANCH" ]]; then
@@ -36,28 +46,17 @@ fi
 MERGE_FAILURES=0
 MERGE_SUCCESSES=0
 
-# Iterate over unit directories
 for UNIT_DIR in "${STATE_DIR}/units"/*/; do
-  if [[ ! -d "$UNIT_DIR" ]]; then
-    continue
-  fi
-
   UNIT_STATUS_FILE="${UNIT_DIR}/status.json"
-  if [[ ! -f "$UNIT_STATUS_FILE" ]]; then
-    continue
-  fi
+  [[ ! -f "$UNIT_STATUS_FILE" ]] && continue
 
   STATUS=$(jq -r '.status' "$UNIT_STATUS_FILE")
   BRANCH=$(jq -r '.branch' "$UNIT_STATUS_FILE")
   UNIT_NAME=$(jq -r '.name' "$UNIT_STATUS_FILE")
   WORKTREE_PATH=$(jq -r '.worktree_path // ""' "$UNIT_STATUS_FILE")
 
-  # Only merge completed units
-  if [[ "$STATUS" != "done" ]]; then
-    continue
-  fi
+  [[ "$STATUS" != "done" ]] && continue
 
-  # Check if branch exists
   if ! git rev-parse --verify "$BRANCH" &>/dev/null; then
     log "WARNING: Branch $BRANCH for unit $UNIT_NAME does not exist, skipping"
     continue
@@ -68,41 +67,29 @@ for UNIT_DIR in "${STATE_DIR}/units"/*/; do
   if git merge "$BRANCH" --no-edit 2>/dev/null; then
     log "  Merged ${UNIT_NAME} successfully"
     MERGE_SUCCESSES=$((MERGE_SUCCESSES + 1))
-
-    # Clean up worktree if it exists
-    if [[ -n "$WORKTREE_PATH" ]] && [[ -d "$WORKTREE_PATH" ]]; then
-      git worktree remove "$WORKTREE_PATH" --force 2>/dev/null || true
-    fi
-
-    # Delete the unit branch
-    git branch -d "$BRANCH" 2>/dev/null || true
   else
-    log "  CONFLICT merging ${UNIT_NAME} — attempting auto-resolve"
-
-    # Try auto-resolve: accept both changes where possible
     CONFLICTED_FILES=$(git diff --name-only --diff-filter=U 2>/dev/null || echo "")
+    git merge --abort 2>/dev/null || true
 
     if [[ -z "$CONFLICTED_FILES" ]]; then
-      log "  WARNING: Merge failed but no conflicts detected — possible hook failure"
-      git merge --abort 2>/dev/null || true
-      log "  FAILED to merge ${UNIT_NAME} — non-conflict merge failure"
-      MERGE_FAILURES=$((MERGE_FAILURES + 1))
-      jq '.status = "merge_conflict" | .last_error = "Merge failed without conflicts — possible hook failure"' \
-        "$UNIT_STATUS_FILE" > "${UNIT_STATUS_FILE}.tmp" && mv "${UNIT_STATUS_FILE}.tmp" "$UNIT_STATUS_FILE"
+      log "  FAILED to merge ${UNIT_NAME} — non-conflict merge failure (possible hook failure)"
     else
-      # Abort this merge — will need manual resolution
-      git merge --abort 2>/dev/null || true
       log "  FAILED to merge ${UNIT_NAME} — conflicts in: ${CONFLICTED_FILES}"
-      MERGE_FAILURES=$((MERGE_FAILURES + 1))
-
-      # Update unit status to reflect merge failure
-      jq '.status = "merge_conflict" | .last_error = "Merge conflict — requires manual resolution"' \
-        "$UNIT_STATUS_FILE" > "${UNIT_STATUS_FILE}.tmp" && mv "${UNIT_STATUS_FILE}.tmp" "$UNIT_STATUS_FILE"
     fi
+
+    MERGE_FAILURES=$((MERGE_FAILURES + 1))
+    update_unit_status "$UNIT_STATUS_FILE" \
+      '.status = "merge_conflict" | .last_error = "Merge conflict — requires manual resolution"' \
+      "$UNIT_NAME"
   fi
+
+  # Always clean up worktree after merge attempt (success or failure)
+  if [[ -n "$WORKTREE_PATH" ]] && [[ -d "$WORKTREE_PATH" ]]; then
+    git worktree remove "$WORKTREE_PATH" --force 2>/dev/null || true
+  fi
+  git branch -d "$BRANCH" 2>/dev/null || true
 done
 
-# Summary
 log ""
 log "Merge complete: ${MERGE_SUCCESSES} succeeded, ${MERGE_FAILURES} failed"
 
@@ -115,10 +102,15 @@ fi
 if [[ -n "$TEST_COMMAND" ]]; then
   log ""
   log "Running test suite: ${TEST_COMMAND}"
-  if eval "$TEST_COMMAND"; then
+  if timeout 600 sh -c "$TEST_COMMAND"; then
     log "Tests passed."
   else
-    log "Tests FAILED after merge."
+    EXIT_CODE=$?
+    if [[ $EXIT_CODE -eq 124 ]]; then
+      log "Tests TIMEOUT after 10 minutes."
+    else
+      log "Tests FAILED after merge."
+    fi
     exit 2
   fi
 fi
