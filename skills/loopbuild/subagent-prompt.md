@@ -44,12 +44,14 @@ Additionally, before finishing:
 
 ## Retry Context
 
-{{retry_context}}
+**Note to orchestrator:** Include this section ONLY when dispatching a retry (retries > 0).
+For first-time dispatch, omit this entire section from the rendered prompt.
 
-If this is a retry, the following additional context applies:
+This is retry {{retry_number}} of {{max_retries}}. The previous attempt failed with:
 
-- **Retry attempt:** {{retry_number}} of {{max_retries}}
-- **Previous error:** {{last_error}}
+```
+{{last_error}}
+```
 
 Address the previous error specifically. Do not repeat the same approach that failed. If the error indicates a fundamental issue with the approach, report that you are blocked rather than retrying the same strategy.
 

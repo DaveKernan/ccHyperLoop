@@ -8,13 +8,18 @@ allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "Agent"]
 
 ## Step 1: Setup Orchestrator
 
-Execute the setup script with the provided arguments:
+Execute the setup script with the user's arguments via the Bash tool. Substitute the user's actual plan path and any flags they provided:
 
 ```
-"${CLAUDE_PLUGIN_ROOT}/scripts/setup-orchestrator.sh" $ARGUMENTS
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-orchestrator.sh" <plan-path> [--max-concurrent N] [--max-iterations N] [--max-retries N]
 ```
 
-Run this via the Bash tool. This script parses the plan file, creates the orchestrator directory structure, and initializes worktrees.
+For example, if the user ran `/loopbuild docs/loop-plans/2026-04-03-feature.md --max-concurrent 6`, run:
+```
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-orchestrator.sh" docs/loop-plans/2026-04-03-feature.md --max-concurrent 6
+```
+
+This script parses the plan file, creates the orchestrator directory structure, and initializes state.
 
 ## Step 2: Start the Loop
 

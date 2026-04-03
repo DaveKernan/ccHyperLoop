@@ -30,7 +30,8 @@ Do not proceed until you have read ALL state files. Decisions without current st
      - `{{unit_dod_from_context_md}}` — the Definition of Done section from the unit's context.md
      - `{{retry_context}}`, `{{retry_number}}`, `{{max_retries}}`, `{{last_error}}` — from unit status.json (only if retrying)
    - Pass the rendered prompt as the `prompt` parameter to the Agent tool with `isolation: "worktree"` and `mode: "bypassPermissions"`
-   - Update the unit's status.json: set `status` to `"in_progress"`, record `worktree_path`
+   - The Agent tool returns the worktree path and branch in its result when `isolation: "worktree"` is used. Record these in the unit's status.json. If the worktree path is not returned, discover it via `git worktree list` and match by the unit's branch name.
+   - Update the unit's status.json: set `status` to `"in_progress"`, record `worktree_path` and `branch`
 3. **Process returned subagents:**
    - **Success** — set unit status to `"done"`, update `simplify_done` and `review_done` flags, increment `units_completed` in status.json
    - **Failure with retries remaining** — increment `retries`, record `last_error`, set status back to `"pending"` for re-dispatch next iteration

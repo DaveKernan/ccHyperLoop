@@ -6,6 +6,9 @@
 
 set -euo pipefail
 
+# Safety: if anything goes wrong in the hook, allow exit rather than locking the session
+trap 'exit 0' ERR
+
 HOOK_INPUT=$(cat)
 
 PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo ".")
