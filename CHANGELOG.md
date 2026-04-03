@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1 — 2026-04-03
+
+- Security guardrails: subagent Rule 7 (OWASP), plan security guidance, REVIEWING phase security scan
+- Prevents raw HTML rendering of user content, unparameterized SQL, hardcoded secrets
+
 ## 0.2.0 — 2026-04-03
 
 - Encouragement Mode — optional reminder appended to subagent work instructions
